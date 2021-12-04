@@ -119,7 +119,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
     // получение списка фильмов
     getMyDiscover(mvvmViewModel)
 
-    //ShowErrorDialog(state = textState, resultOfLoad = resultOfLoad, letShowDialog = letShowErrorDialog, request = searchLineState)
+    ShowErrorDialog(mvvmViewModel)
 
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
         Spacer(modifier = Modifier.height(10.dp))
@@ -415,29 +415,26 @@ fun getMyDiscover(mvvmViewModel: MvvmViewModel) {
 //        getMySearchDiscover(state = state, letShowDialog = letShowDialog, request = request)
 //    }
 //}
-//
-//// всплывающее окно ошибки
-//@Composable
-//private fun ShowErrorDialog(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>, request: MutableState<String>) {
-//
-//    if (letShowDialog.value != "") {
-//        AlertDialog(
-//            onDismissRequest = {
-//            },
-//            title = {
-//                Text(text = "Ошибка!")
-//            },
-//            text = {
-//                Text("$letShowDialog")
-//            },
-//            confirmButton = {
-//                Button(onClick = {
-//                    letShowDialog.value = ""
-//                    updateScreen(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad, request = request.value)
-//                }) {
-//                    Text("Обновить")
-//                }
-//            }
-//        )
-//    }
-//}
+
+// всплывающее окно ошибки
+@Composable
+private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
+
+    if (mvvmViewModel.letShowErrorDialog != "") {
+        AlertDialog(
+            title = { Text(text = "Ошибка!") },
+            text = { Text(mvvmViewModel.letShowErrorDialog) },
+            confirmButton = {
+                Button(onClick = {
+                    mvvmViewModel.setLetShowED("")
+                    //letShowDialog.value = ""
+                    //updateScreen(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad, request = request.value)
+                }) {
+                    Text("Обновить")
+                }
+            },
+            onDismissRequest = {
+            }
+        )
+    }
+}
