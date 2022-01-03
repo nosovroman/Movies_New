@@ -56,8 +56,6 @@ class MvvmViewModel : ViewModel() {
     }
     fun setSearchLine(newTextSearchLine: String) {
         searchLineState = newTextSearchLine
-//        if (searchLineState.trim() == "")  { getMyDiscover(this) }
-//        else { getMySearchDiscover(this) }
     }
     fun setLetShowED(newErrorDialogState: String) {
         letShowErrorDialog = newErrorDialogState
@@ -87,9 +85,9 @@ fun AppNavigator(mvvmViewModel: MvvmViewModel) {
 
     NavHost(
         navController = navController,
-        startDestination = "moviesView"
+        startDestination = Constants.VIEW_MOVIES
     ) {
-        composable("moviesView") { MainScreen(navController, mvvmViewModel) }
+        composable(Constants.VIEW_MOVIES) { MainScreen(navController, mvvmViewModel) }
 //        composable(
 //            "detailMoviesView/{movieId}",
 //            arguments = listOf(
@@ -106,11 +104,6 @@ fun AppNavigator(mvvmViewModel: MvvmViewModel) {
 
 @Composable
 fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
-//    var textState = remember { mutableStateOf(mutableListOf<Result>()) }
-//    var resultOfLoad = remember { mutableStateOf(Constants.LOAD_STATE_NOTHING) }
-//    var searchLineState = remember { mutableStateOf("") }
-//    var letShowErrorDialog =  remember { mutableStateOf("") }
-
     //mvvmViewModel.movies
     //mvvmViewModel.searchLineState
     //mvvmViewModel.letShowErrorDialog
@@ -167,25 +160,7 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
             },
             singleLine = true,
             textStyle = TextStyle(color = SearchLineColorEnd, fontSize = 20.sp),
-            placeholder = { Text(text = "Введите название фильма", color = HintColor) },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    tint = Purple500,
-                    contentDescription = "Search"
-                )
-//                IconButton(onClick = {
-//                    if (searchLineState.value.trim() != "") {
-////                        getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad)
-//                    }
-//                }) {
-//                    Icon(
-//                        imageVector = Icons.Default.Search,
-//                        tint = Purple500,
-//                        contentDescription = "Search"
-//                    )
-//                }
-            }
+            placeholder = { Text(text = "Введите название фильма", color = HintColor) }
         )
     }
 }
@@ -351,70 +326,6 @@ fun getMyDiscover(mvvmViewModel: MvvmViewModel) {
     }
 }
 
-//// получение всех фильмов
-//fun getMyDiscover(mvvmViewModel: MvvmViewModel) { //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>
-//    val movies = mutableListOf<Result>()
-//
-//    Constants.retrofitService.getDiscover().enqueue(
-//        object : Callback<Discover> {
-//            override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-//                val responseBody = response.body()!!.results
-//                val myStringBuilder = StringBuilder()
-//                for (myData in responseBody) {
-//                    myStringBuilder.append("${myData.title}\n")
-//                    movies.add(myData)
-//                }
-//                mvvmViewModel.setMovies(movies) //state.value = movies
-//
-//                if (movies.isEmpty()) mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_NOTHING) //resultOfLoad.value = Constants.LOAD_STATE_NOTHING
-//                else mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_SOMETHING)  //resultOfLoad.value = Constants.LOAD_STATE_SOMETHING
-//            }
-//
-//            override fun onFailure(call: Call<Discover>, t: Throwable) {
-//                mvvmViewModel.setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
-//            }
-//        }
-//    )
-//}
-//
-//// получение фильмов по поиску
-//fun getMySearchDiscover(mvvmViewModel: MvvmViewModel) { //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, request: String
-//    val movies = mutableListOf<Result>()
-//
-//    Log.d("MyDiscover", "Hello bro212")
-//    Constants.retrofitService.getSearchDiscover(query = mvvmViewModel.searchLineState).enqueue(
-//        object : Callback<Discover> {
-//            override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-//                val responseBody = response.body()!!.results
-//                val myStringBuilder = StringBuilder()
-//                for (myData in responseBody) {
-//                    myStringBuilder.append("${myData.title}\n")
-//                    movies.add(myData)
-//                }
-//                mvvmViewModel.setMovies(movies) //state.value = movies
-//            }
-//
-//            override fun onFailure(call: Call<Discover>, t: Throwable) {
-//                mvvmViewModel.setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
-//            }
-//        }
-//    )
-//}
-
-
-
-
-
-
-
-//// обновление экрана
-//fun updateScreen(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>, request: String) {
-//    if (request == "") {
-//        getMyDiscover(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad)
-//    } else {
-//        getMySearchDiscover(state = state, letShowDialog = letShowDialog, request = request)
-//    }
-//}
 
 // всплывающее окно ошибки
 @Composable
@@ -427,8 +338,7 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
             confirmButton = {
                 Button(onClick = {
                     mvvmViewModel.setLetShowED("")
-                    //letShowDialog.value = ""
-                    //updateScreen(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad, request = request.value)
+                    getMyDiscover(mvvmViewModel)
                 }) {
                     Text("Обновить")
                 }

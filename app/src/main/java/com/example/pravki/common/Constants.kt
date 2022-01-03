@@ -19,4 +19,6 @@ object Constants {
 
     const val FETCH_DISCOVER = "discover"
     const val FETCH_SEARCH = "search"
+
+    const val VIEW_MOVIES = "moviesView"
 }
