@@ -105,6 +105,7 @@ class MvvmViewModel : ViewModel() {
                             movieList.add(myData)
                         }
                         setMovieList(movieList)
+
                     }
 
                     override fun onFailure(call: Call<Discover>, t: Throwable) {
