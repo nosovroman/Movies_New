@@ -69,7 +69,7 @@ class MvvmViewModel : ViewModel() {
         val movies = mutableListOf<Result>()
 
         // получение всех фильмов
-        if (searchLineState == "") {
+        if (searchLineState.isEmpty()) {
             Constants.retrofitService.getDiscover().enqueue(
                 object : Callback<Discover> {
                     override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
@@ -169,7 +169,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
         SearchFieldComponent(mvvmViewModel)
         Spacer(modifier = Modifier.height(10.dp))
         if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_SOMETHING) {
-            MovieListComponent(movieList = mvvmViewModel.movies, navController = navController, resultOfLoad = mvvmViewModel.resultOfLoad)
+            MovieListComponent(mvvmViewModel = mvvmViewModel, movieList = mvvmViewModel.movies, navController = navController, resultOfLoad = mvvmViewModel.resultOfLoad)
         } else {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 CircularProgressIndicator(color = MaterialTheme.colors.secondary)
@@ -218,12 +218,12 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
 
 // список фильмов ------- обработку пустого списка чекнуть, лишняя первая проверка(?)
 @Composable
-fun MovieListComponent(movieList: MutableList<Result>, navController: NavHostController, resultOfLoad: Int) {
+fun MovieListComponent(mvvmViewModel: MvvmViewModel, movieList: MutableList<Result>, navController: NavHostController, resultOfLoad: Int) {
 
     if (resultOfLoad == Constants.LOAD_STATE_NOTHING || movieList.isEmpty()) {
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = stringResource(R.string.empty_results),
+                text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
                 modifier = Modifier.padding(top = 10.dp),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.onPrimary,
@@ -322,7 +322,7 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
 @Composable
 private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
 
-    if (mvvmViewModel.letShowErrorDialog != "") {
+    if (mvvmViewModel.letShowErrorDialog.isNotEmpty()) {
         AlertDialog(
             title = { Text(text = stringResource(R.string.error)) },
             text = { Text(mvvmViewModel.letShowErrorDialog) },
