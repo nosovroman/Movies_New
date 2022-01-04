@@ -1,6 +1,7 @@
 package com.example.pravki
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -63,10 +64,11 @@ class MvvmViewModel : ViewModel() {
     }
 
     // получение фильмов
+    // SETRESOFLOAD не совсем верно работает - если приходит пустой список, ему кажется, что оно грузится. Решение - задать дефолтное movieList перед выгрузкой
     fun getMyDiscover() {
         //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>
 
-        val movies = mutableListOf<Result>()
+        val movieList = mutableListOf<Result>()
 
         // получение всех фильмов
         if (searchLineState.isEmpty()) {
@@ -77,16 +79,16 @@ class MvvmViewModel : ViewModel() {
                         val myStringBuilder = StringBuilder()
                         for (myData in responseBody) {
                             myStringBuilder.append("${myData.title}\n")
-                            movies.add(myData)
+                            movieList.add(myData)
                         }
-                        setMovieList(movies) //state.value = movies
+                        setMovieList(movieList)
 
-                        if (movies.isEmpty()) setResOfLoad(Constants.LOAD_STATE_NOTHING) //resultOfLoad.value = Constants.LOAD_STATE_NOTHING
-                        else setResOfLoad(Constants.LOAD_STATE_SOMETHING)  //resultOfLoad.value = Constants.LOAD_STATE_SOMETHING
+                        if (movies.isEmpty()) setResOfLoad(Constants.LOAD_STATE_NOTHING)
+                        else setResOfLoad(Constants.LOAD_STATE_SOMETHING)
                     }
 
                     override fun onFailure(call: Call<Discover>, t: Throwable) {
-                        setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
+                        setLetShowED(t.message.toString())
                     }
                 }
             )
@@ -100,9 +102,9 @@ class MvvmViewModel : ViewModel() {
                         val myStringBuilder = StringBuilder()
                         for (myData in responseBody) {
                             myStringBuilder.append("${myData.title}\n")
-                            movies.add(myData)
+                            movieList.add(myData)
                         }
-                        setMovieList(movies) //state.value = movies
+                        setMovieList(movieList)
                     }
 
                     override fun onFailure(call: Call<Discover>, t: Throwable) {
