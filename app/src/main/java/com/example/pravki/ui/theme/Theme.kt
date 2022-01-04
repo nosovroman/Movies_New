@@ -8,21 +8,65 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorPalette = darkColors(
+//    primary = Purple200,
+//    primaryVariant = Purple700,
+//    secondary = Teal200,
+//    onSurface = DarkText,
+//    onSecondary = HintColor,
+//    background = Color.White,
+//    onPrimary = Color.White,
+//    onBackground = Color.White,
+//    onError = Color.Red,
+
     primary = Purple200,
-    primaryVariant = Purple700,
-    secondary = Teal200,
-    onSurface = DarkText,
+    primaryVariant = BlueVariant,
+    secondary = YellowVariant,
+    background = Color.Black,
+    onPrimary = YellowVariant,
     onSecondary = HintColor,
-    background = Color.Black
+    onBackground = YellowVariant,
+
+    onSurface = Color.Red,
 )
 
 private val LightColorPalette = lightColors(
-    primary = Purple200,
-    primaryVariant = Purple700,
+    primary = Color.White,
+    primaryVariant = BlueVariant,
     secondary = Purple200,
-    onSurface = Purple200,
+    background = Color.White,
+    onPrimary = Purple200,
     onSecondary = Color.Black,
-    background = Color.White
+    onBackground = Purple200,
+
+    onSurface = Color.Red,//Purple200,
+
+//    primary = Color.Green,
+//    primaryVariant = Color.Green,
+//    secondary = Color.Cyan,
+//    secondaryVariant = Color.Blue,
+//    background = Color.Yellow,
+//    surface = Color.Red,
+//    error = Color.Magenta,
+//    onPrimary = Color.Green,
+//    onSecondary = Color.White,
+//    onBackground = Color.DarkGray,
+//    onSurface = Color.LightGray,
+//    onError = Color.Black,
+
+    /*
+    primary,
+    primaryVariant,
+    secondary,
+    secondaryVariant,
+    background,
+    surface,
+    error,
+    onPrimary,
+    onSecondary,
+    onBackground,
+    onSurface,
+    onError,
+    */
 
     /* Other default colors to override
     background = Color.White,

@@ -3,7 +3,6 @@ package com.example.pravki
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,8 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -122,7 +120,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
             MovieListComponent(movieList = mvvmViewModel.movies, navController = navController, resultOfLoad = mvvmViewModel.resultOfLoad)
         } else {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colors.onSurface)
+                CircularProgressIndicator(color = MaterialTheme.colors.secondary)
             }
         }
     }
@@ -141,13 +139,14 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
                 backgroundColor = Invisible,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent
+                disabledIndicatorColor = Color.Transparent,
+                cursorColor = HintColor
             ),
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
                     width = 2.dp,
-                    color = SearchLineColorEnd,
+                    color = MaterialTheme.colors.primaryVariant,
                     shape = RoundedCornerShape(10.dp)
                 ),
             value = mvvmViewModel.searchLineState,
@@ -159,8 +158,8 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
 //                else { getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowDialog) }
             },
             singleLine = true,
-            textStyle = TextStyle(color = SearchLineColorEnd, fontSize = 20.sp),
-            placeholder = { Text(text = "Введите название фильма", color = HintColor) }
+            textStyle = TextStyle(color = MaterialTheme.colors.primaryVariant, fontSize = 20.sp),
+            placeholder = { Text(text = stringResource(R.string.enter_movie_name), color = HintColor) }
         )
     }
 }
@@ -172,10 +171,10 @@ fun MovieListComponent(movieList: MutableList<Result>, navController: NavHostCon
     if (resultOfLoad == Constants.LOAD_STATE_NOTHING || movieList.isEmpty()) {
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "По Вашему запросу ничего не найдено :(",
+                text = stringResource(R.string.empty_results),
                 modifier = Modifier.padding(top = 10.dp),
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.onSurface,
+                color = MaterialTheme.colors.onPrimary,
             )
         }
     }
@@ -186,7 +185,7 @@ fun MovieListComponent(movieList: MutableList<Result>, navController: NavHostCon
                 MovieCardComponent(movie = movie, navController = navController)
                 if (index < movieList.size - 1) {
                     Spacer(modifier = Modifier.padding(top = 8.dp))
-                    Divider(color = SearchLineColorStart, thickness = 1.dp)
+                    Divider(color = DividerColor, thickness = 1.dp)
                 }
             }
         }
@@ -218,14 +217,16 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
                 //MANIFEST android:usesCleartextTraffic="true"
                 if (movie.poster_path != null) { rememberImagePainter("${Constants.BASE_URL_IMAGES}${Constants.POSTER_SIZE_LIST}${movie.poster_path}") }
                 else { painterResource(R.drawable.default_image) },
-                contentDescription = "Image Text",
+                contentDescription = stringResource(R.string.image_description),
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier
                     .width(120.dp)
                     .height(170.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .border(
-                        2.5.dp, MaterialTheme.colors.secondary, shape = RoundedCornerShape(10.dp)
+                        width = 2.5.dp,
+                        color = MaterialTheme.colors.secondary,
+                        shape = RoundedCornerShape(10.dp)
                     )
             )
         }
@@ -237,7 +238,7 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
             // название фильма
             Text(
                 text = movie.title,
-                color = MaterialTheme.colors.onSurface,
+                color = MaterialTheme.colors.onPrimary,
                 style = MaterialTheme.typography.subtitle2,
                 fontSize = 16.sp
             )
@@ -245,27 +246,20 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
             Spacer(modifier = Modifier.height(4.dp))
 
             // дата выхода (релиза)
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                elevation = 1.dp,
-                modifier = Modifier
-                    .animateContentSize()
-                    .padding(1.dp)
-            ) {
-                Text(
-                    text = "Дата релиза: $date",
-                    modifier = Modifier.padding(all = 4.dp),
-                    color = MaterialTheme.colors.onSecondary,
-                    style = MaterialTheme.typography.body2,
-                )
-            }
+            Text(
+                text = stringResource(R.string.release_date) + " " + date,
+                color = MaterialTheme.colors.onSecondary,
+                //modifier = Modifier.padding(all = 4.dp),
+                style = MaterialTheme.typography.body2,
+            )
+
             Spacer(modifier = Modifier.height(4.dp))
 
             // рейтинг
             Text(
-                text = "Рейтинг: ${movie.vote_average} ⭐",
+                text = stringResource(R.string.rating) + " " + movie.vote_average + " " + stringResource(R.string.star),
                 color = MaterialTheme.colors.onSecondary,
-                modifier = Modifier.padding(all = 4.dp),
+                //modifier = Modifier.padding(all = 4.dp),
                 style = MaterialTheme.typography.body2,
             )
         }
@@ -333,14 +327,14 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
 
     if (mvvmViewModel.letShowErrorDialog != "") {
         AlertDialog(
-            title = { Text(text = "Ошибка!") },
+            title = { Text(text = stringResource(R.string.error)) },
             text = { Text(mvvmViewModel.letShowErrorDialog) },
             confirmButton = {
                 Button(onClick = {
                     mvvmViewModel.setLetShowED("")
                     getMyDiscover(mvvmViewModel)
                 }) {
-                    Text("Обновить")
+                    Text(stringResource(R.string.update))
                 }
             },
             onDismissRequest = {
