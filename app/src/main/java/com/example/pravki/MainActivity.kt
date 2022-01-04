@@ -169,7 +169,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
         SearchFieldComponent(mvvmViewModel)
         Spacer(modifier = Modifier.height(10.dp))
         if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_SOMETHING) {
-            MovieListComponent(mvvmViewModel = mvvmViewModel, movieList = mvvmViewModel.movies, navController = navController, resultOfLoad = mvvmViewModel.resultOfLoad)
+            MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
         } else {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 CircularProgressIndicator(color = MaterialTheme.colors.secondary)
@@ -203,11 +203,7 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
                 ),
             value = mvvmViewModel.searchLineState,
             onValueChange = {
-                mvvmViewModel.setSearchLine(it) //searchLineState.value = it
-//                if (mvvmViewModel.searchLineState.trim() == "")  {
-//                    getMyDiscover(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad)
-//                }
-//                else { getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowDialog) }
+                mvvmViewModel.setSearchLine(it)
             },
             singleLine = true,
             textStyle = TextStyle(color = MaterialTheme.colors.primaryVariant, fontSize = 20.sp),
@@ -218,9 +214,9 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
 
 // список фильмов ------- обработку пустого списка чекнуть, лишняя первая проверка(?)
 @Composable
-fun MovieListComponent(mvvmViewModel: MvvmViewModel, movieList: MutableList<Result>, navController: NavHostController, resultOfLoad: Int) {
+fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostController) {
 
-    if (resultOfLoad == Constants.LOAD_STATE_NOTHING || movieList.isEmpty()) {
+    if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_NOTHING || mvvmViewModel.movies.isEmpty()) {
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
@@ -231,11 +227,11 @@ fun MovieListComponent(mvvmViewModel: MvvmViewModel, movieList: MutableList<Resu
         }
     }
 
-    if (movieList.isNotEmpty()) {
+    if (mvvmViewModel.movies.isNotEmpty()) {
         LazyColumn {
-            itemsIndexed(movieList) { index, movie ->
+            itemsIndexed(mvvmViewModel.movies) { index, movie ->
                 MovieCardComponent(movie = movie, navController = navController)
-                if (index < movieList.size - 1) {
+                if (index < mvvmViewModel.movies.size - 1) {
                     Spacer(modifier = Modifier.padding(top = 8.dp))
                     Divider(color = DividerColor, thickness = 1.dp)
                 }

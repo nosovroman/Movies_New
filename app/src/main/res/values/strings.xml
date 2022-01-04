@@ -3,7 +3,7 @@
     <string name="error">Ошибка!</string>
     <string name="update">Обновить</string>
     <string name="enter_movie_name">Введите название фильма</string>
-    <string name="empty_results">По Вашему запросу \"%1$s\" ничего не найдено :(</string>
+    <string name="empty_results">По Вашему запросу \"%1$s\" ничего не найдено ☹</string>
     <string name="image_description">Постер</string>
     <string name="release_date">Дата релиза: </string>
     <string name="rating">Рейтинг:</string>
