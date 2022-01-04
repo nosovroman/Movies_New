@@ -61,6 +61,57 @@ class MvvmViewModel : ViewModel() {
     fun setResOfLoad(newResultOfLoad: Int) {
         resultOfLoad = newResultOfLoad
     }
+
+    // получение фильмов
+    fun getMyDiscover() {
+        //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>
+
+        val movies = mutableListOf<Result>()
+
+        // получение всех фильмов
+        if (searchLineState == "") {
+            Constants.retrofitService.getDiscover().enqueue(
+                object : Callback<Discover> {
+                    override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
+                        val responseBody = response.body()!!.results
+                        val myStringBuilder = StringBuilder()
+                        for (myData in responseBody) {
+                            myStringBuilder.append("${myData.title}\n")
+                            movies.add(myData)
+                        }
+                        setMovieList(movies) //state.value = movies
+
+                        if (movies.isEmpty()) setResOfLoad(Constants.LOAD_STATE_NOTHING) //resultOfLoad.value = Constants.LOAD_STATE_NOTHING
+                        else setResOfLoad(Constants.LOAD_STATE_SOMETHING)  //resultOfLoad.value = Constants.LOAD_STATE_SOMETHING
+                    }
+
+                    override fun onFailure(call: Call<Discover>, t: Throwable) {
+                        setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
+                    }
+                }
+            )
+        }
+        // получение фильмов по запросу
+        else {
+            Constants.retrofitService.getSearchDiscover(query = searchLineState).enqueue( //Constants.retrofitService.getSearchDiscover(query = request).enqueue(
+                object : Callback<Discover> {
+                    override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
+                        val responseBody = response.body()!!.results
+                        val myStringBuilder = StringBuilder()
+                        for (myData in responseBody) {
+                            myStringBuilder.append("${myData.title}\n")
+                            movies.add(myData)
+                        }
+                        setMovieList(movies) //state.value = movies
+                    }
+
+                    override fun onFailure(call: Call<Discover>, t: Throwable) {
+                        setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
+                    }
+                }
+            )
+        }
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -108,7 +159,8 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
     //mvvmViewModel.resultOfLoad
 
     // получение списка фильмов
-    getMyDiscover(mvvmViewModel)
+    //getMyDiscover(mvvmViewModel)
+    mvvmViewModel.getMyDiscover()
 
     ShowErrorDialog(mvvmViewModel)
 
@@ -266,61 +318,6 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
     }
 }
 
-
-// ----------------------------------------- получение фильмов
-
-// получение фильмов
-fun getMyDiscover(mvvmViewModel: MvvmViewModel) {
-    //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>
-
-    val movies = mutableListOf<Result>()
-
-    // получение всех фильмов
-    if (mvvmViewModel.searchLineState == "") {
-        Constants.retrofitService.getDiscover().enqueue(
-            object : Callback<Discover> {
-                override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-                    val responseBody = response.body()!!.results
-                    val myStringBuilder = StringBuilder()
-                    for (myData in responseBody) {
-                        myStringBuilder.append("${myData.title}\n")
-                        movies.add(myData)
-                    }
-                    mvvmViewModel.setMovieList(movies) //state.value = movies
-
-                    if (movies.isEmpty()) mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_NOTHING) //resultOfLoad.value = Constants.LOAD_STATE_NOTHING
-                    else mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_SOMETHING)  //resultOfLoad.value = Constants.LOAD_STATE_SOMETHING
-                }
-
-                override fun onFailure(call: Call<Discover>, t: Throwable) {
-                    mvvmViewModel.setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
-                }
-            }
-        )
-    }
-    // получение фильмов по запросу
-    else {
-        Constants.retrofitService.getSearchDiscover(query = mvvmViewModel.searchLineState).enqueue( //Constants.retrofitService.getSearchDiscover(query = request).enqueue(
-            object : Callback<Discover> {
-                override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-                    val responseBody = response.body()!!.results
-                    val myStringBuilder = StringBuilder()
-                    for (myData in responseBody) {
-                        myStringBuilder.append("${myData.title}\n")
-                        movies.add(myData)
-                    }
-                    mvvmViewModel.setMovieList(movies) //state.value = movies
-                }
-
-                override fun onFailure(call: Call<Discover>, t: Throwable) {
-                    mvvmViewModel.setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
-                }
-            }
-        )
-    }
-}
-
-
 // всплывающее окно ошибки
 @Composable
 private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
@@ -332,7 +329,8 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
             confirmButton = {
                 Button(onClick = {
                     mvvmViewModel.setLetShowED("")
-                    getMyDiscover(mvvmViewModel)
+                    //getMyDiscover(mvvmViewModel)
+                    mvvmViewModel.getMyDiscover()
                 }) {
                     Text(stringResource(R.string.update))
                 }
