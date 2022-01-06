@@ -136,12 +136,13 @@ class MainActivity : ComponentActivity() {
                 when (resource.status) {
                     Status.SUCCESS -> {
                         Log.d("twer", "SUCCESS")
-                        resource.data?.let { movieList -> mvvmViewModel.setMovieList(movieList)}
+                        resource.data?.let { movieList -> mvvmViewModel.setMovieList(movieList) }
                         if (mvvmViewModel.movies.isEmpty()) mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_NOTHING)
                         else mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_SOMETHING)
                     }
                     Status.ERROR -> {
                         Log.d("twer", "ERROR")
+                        resource.message?.let { errorMsg -> mvvmViewModel.setLetShowED(errorMsg) }
                     }
                     Status.LOADING -> {
                         Log.d("twer", "LOADING")

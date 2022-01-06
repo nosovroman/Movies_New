@@ -3,7 +3,7 @@ package com.example.pravki.retrofit
 import com.example.pravki.common.Constants
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitBuilder {
     private val client = OkHttpClient.Builder().build()
@@ -11,7 +11,7 @@ object RetrofitBuilder {
     fun getRetrofit(baseUrl: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(baseUrl)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create())
             .client(client)
             .build()
     }

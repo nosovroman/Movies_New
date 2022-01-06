@@ -82,6 +82,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-pager:0.19.0"
     implementation("com.google.accompanist:accompanist-imageloading-core:0.15.0")
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.4.0'
+    implementation "com.squareup.retrofit2:converter-moshi:2.4.0"
 //    implementation 'android.arch.lifecycle:extensions:2.2.0'
 //    implementation 'androidx.lifecycle:lifecycle-common:2.4.0'
 }
