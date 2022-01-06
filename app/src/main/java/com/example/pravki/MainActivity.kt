@@ -24,7 +24,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.liveData
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,12 +36,20 @@ import com.example.pravki.dataClasses.Discover
 import com.example.pravki.dataClasses.Result
 import com.example.pravki.common.Constants
 import com.example.pravki.extensions.formatDate
+import com.example.pravki.repository.Repository
+import com.example.pravki.retrofit.ApiHelper
+import com.example.pravki.retrofit.ApiService
+import com.example.pravki.retrofit.RetrofitBuilder
 import com.example.pravki.ui.theme.*
+import kotlinx.coroutines.Dispatchers
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MvvmViewModel : ViewModel() {
+class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
+
+    val repo = Repository(ApiHelper(RetrofitBuilder.apiService))
+
     var movies by mutableStateOf(mutableListOf<Result>())
         private set
     var searchLineState by mutableStateOf("")
@@ -62,72 +72,83 @@ class MvvmViewModel : ViewModel() {
     fun setResOfLoad(newResultOfLoad: Int) {
         resultOfLoad = newResultOfLoad
     }
-
     // получение фильмов
     // SETRESOFLOAD не совсем верно работает - если приходит пустой список, ему кажется, что оно грузится. Решение - задать дефолтное movieList перед выгрузкой
-    fun getMyDiscover() {
-        //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>
-
-        val movieList = mutableListOf<Result>()
-
-        // получение всех фильмов
-        if (searchLineState.isEmpty()) {
-            Constants.retrofitService.getDiscover().enqueue(
-                object : Callback<Discover> {
-                    override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-                        val responseBody = response.body()!!.results
-                        val myStringBuilder = StringBuilder()
-                        for (myData in responseBody) {
-                            myStringBuilder.append("${myData.title}\n")
-                            movieList.add(myData)
-                        }
-                        setMovieList(movieList)
-
-                        if (movies.isEmpty()) setResOfLoad(Constants.LOAD_STATE_NOTHING)
-                        else setResOfLoad(Constants.LOAD_STATE_SOMETHING)
-                    }
-
-                    override fun onFailure(call: Call<Discover>, t: Throwable) {
-                        setLetShowED(t.message.toString())
-                    }
-                }
-            )
-        }
-        // получение фильмов по запросу
-        else {
-            Constants.retrofitService.getSearchDiscover(query = searchLineState).enqueue( //Constants.retrofitService.getSearchDiscover(query = request).enqueue(
-                object : Callback<Discover> {
-                    override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-                        val responseBody = response.body()!!.results
-                        val myStringBuilder = StringBuilder()
-                        for (myData in responseBody) {
-                            myStringBuilder.append("${myData.title}\n")
-                            movieList.add(myData)
-                        }
-                        setMovieList(movieList)
-
-                    }
-
-                    override fun onFailure(call: Call<Discover>, t: Throwable) {
-                        setLetShowED(t.message.toString()) // letShowDialog.value = t.message.toString()
-                    }
-                }
-            )
+    fun getMyDiscover() = liveData(Dispatchers.IO) {
+        emit(Resource.loading(data = null))
+        try {
+            val repo = Repository(ApiHelper(RetrofitBuilder.apiService))
+            emit(Resource.success(data = repo.getDiscover().results as MutableList<Result>))
+        } catch (exception: Exception) {
+            emit(Resource.error(data = null, message = exception.message ?: "Error Occurred!"))
         }
     }
+
+//    // получение фильмов
+//    // SETRESOFLOAD не совсем верно работает - если приходит пустой список, ему кажется, что оно грузится. Решение - задать дефолтное movieList перед выгрузкой
+//    fun getMyDiscover() {
+//        //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>
+//
+//        val movieList = mutableListOf<Result>()
+//
+//        Constants.retrofitService.getDiscover().enqueue(
+//            object : Callback<Discover> {
+//                override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
+//                    val responseBody = response.body()!!.results
+//                    val myStringBuilder = StringBuilder()
+//                    for (myData in responseBody) {
+//                        myStringBuilder.append("${myData.title}\n")
+//                        movieList.add(myData)
+//                    }
+//                    setMovieList(movieList)
+//
+//                    if (movies.isEmpty()) setResOfLoad(Constants.LOAD_STATE_NOTHING)
+//                    else setResOfLoad(Constants.LOAD_STATE_SOMETHING)
+//                }
+//
+//                override fun onFailure(call: Call<Discover>, t: Throwable) {
+//                    setLetShowED(t.message.toString())
+//                }
+//            }
+//        )
+//    }
 }
 
 class MainActivity : ComponentActivity() {
 
-    private val mvvmViewModel = MvvmViewModel()
+    private val mvvmViewModel = MvvmViewModel(Repository(ApiHelper(RetrofitBuilder.apiService)))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             PravkiTheme {
                 AppNavigator(mvvmViewModel)
             }
         }
+
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        mvvmViewModel.getMyDiscover().observe(this, Observer {
+            it?.let { resource ->
+                when (resource.status) {
+                    Status.SUCCESS -> {
+                        Log.d("twer", "SUCCESS")
+                        resource.data?.let { movieList -> mvvmViewModel.setMovieList(movieList)}
+                        if (mvvmViewModel.movies.isEmpty()) mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_NOTHING)
+                        else mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_SOMETHING)
+                    }
+                    Status.ERROR -> {
+                        Log.d("twer", "ERROR")
+                    }
+                    Status.LOADING -> {
+                        Log.d("twer", "LOADING")
+                    }
+                }
+            }
+        })
     }
 }
 
@@ -162,7 +183,6 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
     //mvvmViewModel.resultOfLoad
 
     // получение списка фильмов
-    //getMyDiscover(mvvmViewModel)
     mvvmViewModel.getMyDiscover()
 
     ShowErrorDialog(mvvmViewModel)
@@ -328,7 +348,6 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
             confirmButton = {
                 Button(onClick = {
                     mvvmViewModel.setLetShowED("")
-                    //getMyDiscover(mvvmViewModel)
                     mvvmViewModel.getMyDiscover()
                 }) {
                     Text(stringResource(R.string.update))
