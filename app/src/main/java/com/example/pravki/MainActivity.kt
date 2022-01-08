@@ -86,14 +86,20 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
 
     fun getMovies() {
         val repo = Repository(RetrofitBuilder.apiService)
-        //Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
         GlobalScope.launch(Dispatchers.IO) {
             Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
-            val response = if (searchLineState.isEmpty()) repo.getDiscover() else repo.getSearchDiscover(searchLineState)
-            if (response.isSuccessful) {
-                setMovieList(response.body()!!.results as MutableList<Result>)
-                setResOfLoad(Constants.LOAD_STATE_DONE)
-                Log.d("twer", "LOAD_STATE_SOMETHING___$resultOfLoad")
+            try {
+                val response = if (searchLineState.isEmpty()) repo.getDiscover() else repo.getSearchDiscover(searchLineState)
+                if (response.isSuccessful) {
+                    Log.d("twer", "BODY!!!")
+                    setMovieList(response.body()!!.results as MutableList<Result>)
+                    setResOfLoad(Constants.LOAD_STATE_DONE)
+                    Log.d("twer", "LOAD_STATE_SOMETHING___$resultOfLoad")
+                } else {
+                    setLetShowED("Error " + response.code())
+                }
+            } catch (e: Exception) {
+                setLetShowED(e.message ?: "Unknown error")
             }
         }
     }
@@ -143,7 +149,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
     // получение списка фильмов
     mvvmViewModel.getMovies()
 
-    //ShowErrorDialog(mvvmViewModel)
+    ShowErrorDialog(mvvmViewModel)
 
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
         Spacer(modifier = Modifier.height(10.dp))
@@ -313,7 +319,8 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
                 Button(onClick = {
                     mvvmViewModel.setLetShowED("")
                     Log.d("twer", "updateButton")
-                    //mvvmViewModel.getMyDiscover()
+                    mvvmViewModel.drawProgressBar()
+                    mvvmViewModel.getMovies()
                 }) {
                     Text(stringResource(R.string.update))
                 }
