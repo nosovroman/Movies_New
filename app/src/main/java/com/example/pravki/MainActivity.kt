@@ -34,7 +34,6 @@ import com.example.pravki.dataClasses.Result
 import com.example.pravki.common.Constants
 import com.example.pravki.extensions.formatDate
 import com.example.pravki.repository.Repository
-import com.example.pravki.retrofit.ApiHelper
 import com.example.pravki.retrofit.RetrofitBuilder
 import com.example.pravki.ui.theme.*
 import kotlinx.coroutines.Dispatchers
@@ -42,16 +41,13 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
-
-    //val repo = Repository(RetrofitBuilder.apiService)
-
     var movies by mutableStateOf(mutableListOf<Result>())
         private set
     var searchLineState by mutableStateOf("")
         private set
     var letShowErrorDialog by mutableStateOf("")
         private set
-    var resultOfLoad by mutableStateOf(Constants.LOAD_STATE_ERROR)
+    var resultOfLoad by mutableStateOf(Constants.LOAD_STATE_LOADING)
         private set
 
 
@@ -84,20 +80,20 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
 //            emit(Resource.error(data = null, message = exception.message ?: "Error Occurred!"))
 //        }
 //    }
-    fun getMyDiscover() {
-        //setResOfLoad(Constants.LOAD_STATE_NOTHING)
+    fun drawProgressBar() {
+        setResOfLoad(Constants.LOAD_STATE_LOADING)
+    }
+
+    fun getMovies() {
         val repo = Repository(RetrofitBuilder.apiService)
-        Log.d("twer", "LOAD_STATE_NOTHING")
+        //Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
         GlobalScope.launch(Dispatchers.IO) {
-            Log.d("twer", "GlobalScope")
-            val response = if (searchLineState.isEmpty()) repo.getDiscover() else
-                repo.getSearchDiscover(searchLineState)
+            Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
+            val response = if (searchLineState.isEmpty()) repo.getDiscover() else repo.getSearchDiscover(searchLineState)
             if (response.isSuccessful) {
                 setMovieList(response.body()!!.results as MutableList<Result>)
-                //if (movies.isEmpty()) { setResOfLoad(Constants.LOAD_STATE_ERROR); Log.d("twer", "nothing") }
-                //else
-                setResOfLoad(Constants.LOAD_STATE_SOMETHING)
-                Log.d("twer", "LOAD_STATE_SOMETHING")
+                setResOfLoad(Constants.LOAD_STATE_DONE)
+                Log.d("twer", "LOAD_STATE_SOMETHING___$resultOfLoad")
             }
         }
     }
@@ -145,7 +141,7 @@ fun AppNavigator(mvvmViewModel: MvvmViewModel) {
 fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
 
     // получение списка фильмов
-    mvvmViewModel.getMyDiscover()
+    mvvmViewModel.getMovies()
 
     //ShowErrorDialog(mvvmViewModel)
 
@@ -153,7 +149,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
         Spacer(modifier = Modifier.height(10.dp))
         SearchFieldComponent(mvvmViewModel)
         Spacer(modifier = Modifier.height(10.dp))
-        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_SOMETHING) {
+        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
             MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
         } else {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
@@ -189,7 +185,8 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
             value = mvvmViewModel.searchLineState,
             onValueChange = {
                 mvvmViewModel.setSearchLine(it)
-                mvvmViewModel.getMyDiscover()
+                mvvmViewModel.drawProgressBar()
+                mvvmViewModel.getMovies()
             },
             singleLine = true,
             textStyle = TextStyle(color = MaterialTheme.colors.primaryVariant, fontSize = 20.sp),
@@ -202,9 +199,8 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
 @Composable
 fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostController) {
 
-    Log.d("twer", "h")
+    Log.d("twer", "draw empty message or movie list")
 
-    //if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_NOTHING || mvvmViewModel.movies.isEmpty()) {
     if (mvvmViewModel.movies.isEmpty()) {
         Log.d("twer", "empty_results")
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
@@ -218,6 +214,7 @@ fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostContr
     }
 
     if (mvvmViewModel.movies.isNotEmpty()) {
+        Log.d("twer", "movie list")
         LazyColumn {
             itemsIndexed(mvvmViewModel.movies) { index, movie ->
                 MovieCardComponent(movie = movie, navController = navController)
