@@ -24,31 +24,26 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.liveData
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
-import com.example.pravki.dataClasses.Discover
 import com.example.pravki.dataClasses.Result
 import com.example.pravki.common.Constants
 import com.example.pravki.extensions.formatDate
 import com.example.pravki.repository.Repository
 import com.example.pravki.retrofit.ApiHelper
-import com.example.pravki.retrofit.ApiService
 import com.example.pravki.retrofit.RetrofitBuilder
 import com.example.pravki.ui.theme.*
 import kotlinx.coroutines.Dispatchers
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
 
-    val repo = Repository(ApiHelper(RetrofitBuilder.apiService))
+    //val repo = Repository(RetrofitBuilder.apiService)
 
     var movies by mutableStateOf(mutableListOf<Result>())
         private set
@@ -56,7 +51,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
         private set
     var letShowErrorDialog by mutableStateOf("")
         private set
-    var resultOfLoad by mutableStateOf(Constants.LOAD_STATE_NOTHING)
+    var resultOfLoad by mutableStateOf(Constants.LOAD_STATE_ERROR)
         private set
 
 
@@ -74,49 +69,43 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
     }
     // получение фильмов
     // SETRESOFLOAD не совсем верно работает - если приходит пустой список, ему кажется, что оно грузится. Решение - задать дефолтное movieList перед выгрузкой
-    fun getMyDiscover() = liveData(Dispatchers.IO) {
-        emit(Resource.loading(data = null))
-        try {
-            val repo = Repository(ApiHelper(RetrofitBuilder.apiService))
-            emit(Resource.success(data = repo.getDiscover().results as MutableList<Result>))
-        } catch (exception: Exception) {
-            emit(Resource.error(data = null, message = exception.message ?: "Error Occurred!"))
+//    fun getMyDiscover() = liveData(Dispatchers.IO) {
+//        Log.d("twer", "request fun getDiscover")
+//        emit(Resource.loading(data = null))
+//        try {
+//            val repo = Repository(ApiHelper(RetrofitBuilder.apiService))
+//            if (searchLineState.isEmpty()) {
+//                emit(Resource.success(data = repo.getDiscover().results as MutableList<Result>))
+//            }
+//            else {
+//                emit(Resource.success(data = repo.getSearchDiscover(searchLineState).results as MutableList<Result>))
+//            }
+//        } catch (exception: Exception) {
+//            emit(Resource.error(data = null, message = exception.message ?: "Error Occurred!"))
+//        }
+//    }
+    fun getMyDiscover() {
+        //setResOfLoad(Constants.LOAD_STATE_NOTHING)
+        val repo = Repository(RetrofitBuilder.apiService)
+        Log.d("twer", "LOAD_STATE_NOTHING")
+        GlobalScope.launch(Dispatchers.IO) {
+            Log.d("twer", "GlobalScope")
+            val response = if (searchLineState.isEmpty()) repo.getDiscover() else
+                repo.getSearchDiscover(searchLineState)
+            if (response.isSuccessful) {
+                setMovieList(response.body()!!.results as MutableList<Result>)
+                //if (movies.isEmpty()) { setResOfLoad(Constants.LOAD_STATE_ERROR); Log.d("twer", "nothing") }
+                //else
+                setResOfLoad(Constants.LOAD_STATE_SOMETHING)
+                Log.d("twer", "LOAD_STATE_SOMETHING")
+            }
         }
     }
-
-//    // получение фильмов
-//    // SETRESOFLOAD не совсем верно работает - если приходит пустой список, ему кажется, что оно грузится. Решение - задать дефолтное movieList перед выгрузкой
-//    fun getMyDiscover() {
-//        //state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>
-//
-//        val movieList = mutableListOf<Result>()
-//
-//        Constants.retrofitService.getDiscover().enqueue(
-//            object : Callback<Discover> {
-//                override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-//                    val responseBody = response.body()!!.results
-//                    val myStringBuilder = StringBuilder()
-//                    for (myData in responseBody) {
-//                        myStringBuilder.append("${myData.title}\n")
-//                        movieList.add(myData)
-//                    }
-//                    setMovieList(movieList)
-//
-//                    if (movies.isEmpty()) setResOfLoad(Constants.LOAD_STATE_NOTHING)
-//                    else setResOfLoad(Constants.LOAD_STATE_SOMETHING)
-//                }
-//
-//                override fun onFailure(call: Call<Discover>, t: Throwable) {
-//                    setLetShowED(t.message.toString())
-//                }
-//            }
-//        )
-//    }
 }
 
 class MainActivity : ComponentActivity() {
 
-    private val mvvmViewModel = MvvmViewModel(Repository(ApiHelper(RetrofitBuilder.apiService)))
+    private val mvvmViewModel = MvvmViewModel(Repository(RetrofitBuilder.apiService))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,30 +115,6 @@ class MainActivity : ComponentActivity() {
                 AppNavigator(mvvmViewModel)
             }
         }
-
-        setupObservers()
-    }
-
-    private fun setupObservers() {
-        mvvmViewModel.getMyDiscover().observe(this, Observer {
-            it?.let { resource ->
-                when (resource.status) {
-                    Status.SUCCESS -> {
-                        Log.d("twer", "SUCCESS")
-                        resource.data?.let { movieList -> mvvmViewModel.setMovieList(movieList) }
-                        if (mvvmViewModel.movies.isEmpty()) mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_NOTHING)
-                        else mvvmViewModel.setResOfLoad(Constants.LOAD_STATE_SOMETHING)
-                    }
-                    Status.ERROR -> {
-                        Log.d("twer", "ERROR")
-                        resource.message?.let { errorMsg -> mvvmViewModel.setLetShowED(errorMsg) }
-                    }
-                    Status.LOADING -> {
-                        Log.d("twer", "LOADING")
-                    }
-                }
-            }
-        })
     }
 }
 
@@ -178,15 +143,11 @@ fun AppNavigator(mvvmViewModel: MvvmViewModel) {
 
 @Composable
 fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
-    //mvvmViewModel.movies
-    //mvvmViewModel.searchLineState
-    //mvvmViewModel.letShowErrorDialog
-    //mvvmViewModel.resultOfLoad
 
     // получение списка фильмов
     mvvmViewModel.getMyDiscover()
 
-    ShowErrorDialog(mvvmViewModel)
+    //ShowErrorDialog(mvvmViewModel)
 
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
         Spacer(modifier = Modifier.height(10.dp))
@@ -205,7 +166,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
 // строка поиска
 @Composable
 fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
-    //state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>, letShowDialog: MutableState<String>, searchLineState: MutableState<String>
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -228,6 +189,7 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
             value = mvvmViewModel.searchLineState,
             onValueChange = {
                 mvvmViewModel.setSearchLine(it)
+                mvvmViewModel.getMyDiscover()
             },
             singleLine = true,
             textStyle = TextStyle(color = MaterialTheme.colors.primaryVariant, fontSize = 20.sp),
@@ -240,7 +202,11 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
 @Composable
 fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostController) {
 
-    if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_NOTHING || mvvmViewModel.movies.isEmpty()) {
+    Log.d("twer", "h")
+
+    //if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_NOTHING || mvvmViewModel.movies.isEmpty()) {
+    if (mvvmViewModel.movies.isEmpty()) {
+        Log.d("twer", "empty_results")
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
@@ -349,7 +315,8 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
             confirmButton = {
                 Button(onClick = {
                     mvvmViewModel.setLetShowED("")
-                    mvvmViewModel.getMyDiscover()
+                    Log.d("twer", "updateButton")
+                    //mvvmViewModel.getMyDiscover()
                 }) {
                     Text(stringResource(R.string.update))
                 }
