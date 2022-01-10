@@ -63,23 +63,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
     fun setResOfLoad(newResultOfLoad: Int) {
         resultOfLoad = newResultOfLoad
     }
-    // получение фильмов
-    // SETRESOFLOAD не совсем верно работает - если приходит пустой список, ему кажется, что оно грузится. Решение - задать дефолтное movieList перед выгрузкой
-//    fun getMyDiscover() = liveData(Dispatchers.IO) {
-//        Log.d("twer", "request fun getDiscover")
-//        emit(Resource.loading(data = null))
-//        try {
-//            val repo = Repository(ApiHelper(RetrofitBuilder.apiService))
-//            if (searchLineState.isEmpty()) {
-//                emit(Resource.success(data = repo.getDiscover().results as MutableList<Result>))
-//            }
-//            else {
-//                emit(Resource.success(data = repo.getSearchDiscover(searchLineState).results as MutableList<Result>))
-//            }
-//        } catch (exception: Exception) {
-//            emit(Resource.error(data = null, message = exception.message ?: "Error Occurred!"))
-//        }
-//    }
+
     fun drawProgressBar() {
         setResOfLoad(Constants.LOAD_STATE_LOADING)
     }
@@ -87,19 +71,19 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
     fun getMovies() {
         val repo = Repository(RetrofitBuilder.apiService)
         GlobalScope.launch(Dispatchers.IO) {
-            Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
+            //Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
             try {
                 val response = if (searchLineState.isEmpty()) repo.getDiscover() else repo.getSearchDiscover(searchLineState)
                 if (response.isSuccessful) {
-                    Log.d("twer", "BODY!!!")
+                    //Log.d("twer", "BODY!!!")
                     setMovieList(response.body()!!.results as MutableList<Result>)
                     setResOfLoad(Constants.LOAD_STATE_DONE)
-                    Log.d("twer", "LOAD_STATE_SOMETHING___$resultOfLoad")
+                    //Log.d("twer", "LOAD_STATE_SOMETHING___$resultOfLoad")
                 } else {
-                    setLetShowED("Error " + response.code())
+                    setLetShowED(R.string.error.toString() + " " + response.code())
                 }
             } catch (e: Exception) {
-                setLetShowED(e.message ?: "Unknown error")
+                setLetShowED(e.message ?: R.string.unknown_error.toString())
             }
         }
     }
@@ -205,10 +189,10 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
 @Composable
 fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostController) {
 
-    Log.d("twer", "draw empty message or movie list")
+    //Log.d("twer", "draw empty message or movie list")
 
     if (mvvmViewModel.movies.isEmpty()) {
-        Log.d("twer", "empty_results")
+        //Log.d("twer", "empty_results")
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
@@ -220,7 +204,7 @@ fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostContr
     }
 
     if (mvvmViewModel.movies.isNotEmpty()) {
-        Log.d("twer", "movie list")
+        //Log.d("twer", "movie list")
         LazyColumn {
             itemsIndexed(mvvmViewModel.movies) { index, movie ->
                 MovieCardComponent(movie = movie, navController = navController)
@@ -318,7 +302,7 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
             confirmButton = {
                 Button(onClick = {
                     mvvmViewModel.setLetShowED("")
-                    Log.d("twer", "updateButton")
+                    //Log.d("twer", "updateButton")
                     mvvmViewModel.drawProgressBar()
                     mvvmViewModel.getMovies()
                 }) {
