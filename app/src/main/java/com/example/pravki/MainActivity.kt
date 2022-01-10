@@ -78,6 +78,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
                     //Log.d("twer", "BODY!!!")
                     setMovieList(response.body()!!.results as MutableList<Result>)
                     setResOfLoad(Constants.LOAD_STATE_DONE)
+                    setLetShowED("")
                     //Log.d("twer", "LOAD_STATE_SOMETHING___$resultOfLoad")
                 } else {
                     setLetShowED(R.string.error.toString() + " " + response.code())
@@ -133,8 +134,6 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
     // получение списка фильмов
     mvvmViewModel.getMovies()
 
-    ShowErrorDialog(mvvmViewModel)
-
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
         Spacer(modifier = Modifier.height(10.dp))
         SearchFieldComponent(mvvmViewModel)
@@ -144,6 +143,7 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
                 LinearProgressIndicator(color = MaterialTheme.colors.secondary, backgroundColor = Color.White)
             }
         }
+        ShowErrorDialog(mvvmViewModel)
         MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
 //        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
 //            MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
@@ -189,6 +189,50 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
             textStyle = TextStyle(color = MaterialTheme.colors.primaryVariant, fontSize = 20.sp),
             placeholder = { Text(text = stringResource(R.string.enter_movie_name), color = HintColor) }
         )
+    }
+}
+
+// всплывающее сообщение
+@Composable
+fun SnackBar(mvvmViewModel: MvvmViewModel) {
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(
+                    width = 2.dp,
+                    color = Color.Red,
+                    shape = RoundedCornerShape(10.dp)
+                )
+                .padding(5.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.error),
+                color = MaterialTheme.colors.onPrimary,
+            )
+            Button(
+                modifier = Modifier
+                    .border(
+                        width = 2.dp,
+                        color = Color.Blue,
+                        shape = RoundedCornerShape(10.dp)
+                    ),
+                onClick = {
+                    mvvmViewModel.setLetShowED("")
+                    //Log.d("twer", "updateButton")
+                    mvvmViewModel.drawProgressBar()
+                    mvvmViewModel.getMovies()
+                }
+            ) {
+                Text(text = stringResource(R.string.update))
+            }
+        }
     }
 }
 
@@ -303,22 +347,24 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
 private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
 
     if (mvvmViewModel.letShowErrorDialog.isNotEmpty()) {
-        val scaffoldState = rememberScaffoldState()
-        val snackbarCoroutineScope = rememberCoroutineScope()
-
-        Scaffold(scaffoldState = scaffoldState) {
-            snackbarCoroutineScope.launch {
-                val result = scaffoldState.snackbarHostState.showSnackbar("Smth error", "Update", SnackbarDuration.Indefinite)
-                when (result) {
-                    SnackbarResult.ActionPerformed -> {
-                        mvvmViewModel.setLetShowED("")
-                        //Log.d("twer", "updateButton")
-                        mvvmViewModel.drawProgressBar()
-                        mvvmViewModel.getMovies()
-                    }
-                }
-            }
-        }
+        Spacer(modifier = Modifier.height(10.dp))
+        SnackBar(mvvmViewModel)
+//        val scaffoldState = rememberScaffoldState()
+//        val snackbarCoroutineScope = rememberCoroutineScope()
+//
+//        Scaffold(scaffoldState = scaffoldState) {
+//            snackbarCoroutineScope.launch {
+//                val result = scaffoldState.snackbarHostState.showSnackbar("Smth error", "Update", SnackbarDuration.Indefinite)
+//                when (result) {
+//                    SnackbarResult.ActionPerformed -> {
+//                        mvvmViewModel.setLetShowED("")
+//                        //Log.d("twer", "updateButton")
+//                        mvvmViewModel.drawProgressBar()
+//                        mvvmViewModel.getMovies()
+//                    }
+//                }
+//            }
+//        }
 
 //        AlertDialog(
 //            title = { Text(text = stringResource(R.string.error)) },
