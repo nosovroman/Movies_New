@@ -139,13 +139,20 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
         Spacer(modifier = Modifier.height(10.dp))
         SearchFieldComponent(mvvmViewModel)
         Spacer(modifier = Modifier.height(10.dp))
-        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
-            MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
-        } else {
+        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_LOADING) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colors.secondary)
+                LinearProgressIndicator(color = MaterialTheme.colors.secondary, backgroundColor = Color.White)
             }
         }
+        MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
+//        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
+//            MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
+//        } else {
+//            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+//                LinearProgressIndicator(color = MaterialTheme.colors.secondary, backgroundColor = Color.White)
+//                //CircularProgressIndicator(color = MaterialTheme.colors.secondary)
+//            }
+//        }
     }
 }
 
@@ -191,7 +198,7 @@ fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostContr
 
     //Log.d("twer", "draw empty message or movie list")
 
-    if (mvvmViewModel.movies.isEmpty()) {
+    if (mvvmViewModel.movies.isEmpty() && mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
         //Log.d("twer", "empty_results")
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -296,21 +303,38 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
 private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
 
     if (mvvmViewModel.letShowErrorDialog.isNotEmpty()) {
-        AlertDialog(
-            title = { Text(text = stringResource(R.string.error)) },
-            text = { Text(mvvmViewModel.letShowErrorDialog) },
-            confirmButton = {
-                Button(onClick = {
-                    mvvmViewModel.setLetShowED("")
-                    //Log.d("twer", "updateButton")
-                    mvvmViewModel.drawProgressBar()
-                    mvvmViewModel.getMovies()
-                }) {
-                    Text(stringResource(R.string.update))
+        val scaffoldState = rememberScaffoldState()
+        val snackbarCoroutineScope = rememberCoroutineScope()
+
+        Scaffold(scaffoldState = scaffoldState) {
+            snackbarCoroutineScope.launch {
+                val result = scaffoldState.snackbarHostState.showSnackbar("Smth error", "Update", SnackbarDuration.Indefinite)
+                when (result) {
+                    SnackbarResult.ActionPerformed -> {
+                        mvvmViewModel.setLetShowED("")
+                        //Log.d("twer", "updateButton")
+                        mvvmViewModel.drawProgressBar()
+                        mvvmViewModel.getMovies()
+                    }
                 }
-            },
-            onDismissRequest = {
             }
-        )
+        }
+
+//        AlertDialog(
+//            title = { Text(text = stringResource(R.string.error)) },
+//            text = { Text(mvvmViewModel.letShowErrorDialog) },
+//            confirmButton = {
+//                Button(onClick = {
+//                    mvvmViewModel.setLetShowED("")
+//                    //Log.d("twer", "updateButton")
+//                    mvvmViewModel.drawProgressBar()
+//                    mvvmViewModel.getMovies()
+//                }) {
+//                    Text(stringResource(R.string.update))
+//                }
+//            },
+//            onDismissRequest = {
+//            }
+//        )
     }
 }
