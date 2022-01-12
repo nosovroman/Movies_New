@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -216,21 +218,25 @@ fun SnackBar(mvvmViewModel: MvvmViewModel) {
                 text = stringResource(R.string.error),
                 color = MaterialTheme.colors.onPrimary,
             )
-            Button(
+            TextButton(
                 modifier = Modifier
                     .border(
                         width = 2.dp,
                         color = Color.Blue,
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
                     ),
                 onClick = {
                     mvvmViewModel.setLetShowED("")
                     //Log.d("twer", "updateButton")
                     mvvmViewModel.drawProgressBar()
                     mvvmViewModel.getMovies()
-                }
+                },
+                //colors = ButtonDefaults.buttonColors(backgroundColor = Invisible)
             ) {
-                Text(text = stringResource(R.string.update))
+                Text(
+                    text = stringResource(R.string.update),
+                    color = MaterialTheme.colors.onPrimary,
+                )
             }
         }
     }
