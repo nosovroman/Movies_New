@@ -1,11 +1,11 @@
 package com.example.pravki
 
+import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,28 +19,77 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
 import coil.compose.rememberImagePainter
 import com.example.pravki.dataClasses.Result
 import com.example.pravki.common.Constants
 import com.example.pravki.extensions.formatDate
 import com.example.pravki.repository.Repository
+import com.example.pravki.repository.RepositoryRoom
 import com.example.pravki.retrofit.RetrofitBuilder
+import com.example.pravki.room.database.DatabaseFavorites
 import com.example.pravki.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+
+//class ViewModelRoom(application: Application) : AndroidViewModel(application) {
+//    lateinit var readAllData: LiveData<List<Int>>
+//    private lateinit var repositoryRoom: RepositoryRoom
+//
+//    init {
+//        Log.d("twer", application.toString())
+//        //val x = DatabaseFavorites.getInstance(application).favoritesDao()
+//        val x = Room.databaseBuilder(
+//            application.applicationContext,
+//            DatabaseFavorites::class.java,
+//            Constants.ROOM_DB_NAME
+//        ).allowMainThreadQueries()
+//            .build()
+//        repositoryRoom = RepositoryRoom(x.favoritesDao())
+//        readAllData = repositoryRoom.readAllData
+//    }
+//
+//    //    var favoritesList by mutableStateOf(mutableListOf<Int>())
+////        private set
+//
+//    //    fun loadAllFavorites() {
+////        favoritesList = favoritesDao.getAll() as MutableList<Int>
+////    }
+////
+//    fun appendInFavoritesList(favoriteId: Int) {
+//        viewModelScope.launch (Dispatchers.IO) {
+//            repositoryRoom.addInFavorites(favoriteId)
+//        }
+//    }
+//
+//    fun deleteFromFavoritesList(favoriteId: Int) {
+//        viewModelScope.launch (Dispatchers.IO) {
+//            repositoryRoom.deleteFromFavorites(favoriteId)
+//        }
+//    }
+////    fun checkExistFavoriteById(favoriteId: Int): Boolean {
+////        return favoritesDao.getFavoriteById(favoriteId) >= 0
+////    }
+////
+////    fun getAllFavorites(): String {
+////        return favoritesDao.getAll().toString()
+////    }
+//
+//}
 
 class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
     var movies by mutableStateOf(mutableListOf<Result>())
@@ -71,7 +120,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
     }
 
     fun getMovies() {
-        val repo = Repository(RetrofitBuilder.apiService)
+        val repo = mainRepository // !!!!!!!!!!!!!!!!!!!!!!! передать сюда параметр mvvm
         GlobalScope.launch(Dispatchers.IO) {
             //Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
             try {
@@ -98,6 +147,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val x = DatabaseFavorites.getInstance(this)
+//            Room.databaseBuilder(
+//            application.applicationContext,
+//            DatabaseFavorites::class.java,
+//            Constants.ROOM_DB_NAME
+//        ).allowMainThreadQueries()
+//            .build()
 
         setContent {
             PravkiTheme {
@@ -132,6 +189,11 @@ fun AppNavigator(mvvmViewModel: MvvmViewModel) {
 
 @Composable
 fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
+
+    //val favorites = mvvmViewModel.readAllData.observeAsState(listOf()).value
+    //val context = LocalContext.current
+    //val customerViewModel = ViewModelProvider(this).get(ViewModelRoom::class.java)
+
 
     // получение списка фильмов
     mvvmViewModel.getMovies()
@@ -264,7 +326,7 @@ fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostContr
         //Log.d("twer", "movie list")
         LazyColumn {
             itemsIndexed(mvvmViewModel.movies) { index, movie ->
-                MovieCardComponent(movie = movie, navController = navController)
+                MovieCardComponent(mvvmViewModel = mvvmViewModel, movie = movie, navController = navController)
                 if (index < mvvmViewModel.movies.size - 1) {
                     Spacer(modifier = Modifier.padding(top = 8.dp))
                     Divider(color = DividerColor, thickness = 1.dp)
@@ -276,7 +338,7 @@ fun MovieListComponent(mvvmViewModel: MvvmViewModel, navController: NavHostContr
 
 // конкретный фильм
 @Composable
-fun MovieCardComponent(movie: Result, navController: NavHostController) {
+fun MovieCardComponent(mvvmViewModel: MvvmViewModel, movie: Result, navController: NavHostController) {
     // установка формата даты
     val date = movie.release_date.formatDate()
 
@@ -315,36 +377,62 @@ fun MovieCardComponent(movie: Result, navController: NavHostController) {
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // информация о фильме
-        Column {
-            // название фильма
-            Text(
-                text = movie.title,
-                color = MaterialTheme.colors.onPrimary,
-                style = MaterialTheme.typography.subtitle2,
-                fontSize = 16.sp
-            )
+        Box (
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(170.dp)
+        ) {
+            // информация о фильме
+            Column {
+                // название фильма
+                Text(
+                    text = movie.title,
+                    color = MaterialTheme.colors.onPrimary,
+                    style = MaterialTheme.typography.subtitle2,
+                    fontSize = 16.sp
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-            // дата выхода (релиза)
-            Text(
-                text = stringResource(R.string.release_date) + " " + date,
-                color = MaterialTheme.colors.onSecondary,
-                //modifier = Modifier.padding(all = 4.dp),
-                style = MaterialTheme.typography.body2,
-            )
+                // дата выхода (релиза)
+                Text(
+                    text = stringResource(R.string.release_date) + " " + date,
+                    color = MaterialTheme.colors.onSecondary,
+                    style = MaterialTheme.typography.body2,
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-            // рейтинг
-            Text(
-                text = stringResource(R.string.rating) + " " + movie.vote_average + " " + stringResource(R.string.star),
-                color = MaterialTheme.colors.onSecondary,
-                //modifier = Modifier.padding(all = 4.dp),
-                style = MaterialTheme.typography.body2,
-            )
+                // рейтинг
+                Text(
+                    text = stringResource(R.string.rating) + " " + movie.vote_average + " " + stringResource(R.string.star),
+                    color = MaterialTheme.colors.onSecondary,
+                    style = MaterialTheme.typography.body2,
+                )
+
+//                val checked = remember { mutableStateOf(mvvmViewModel.checkExistFavoriteById(movie.id)) }
+//                IconToggleButton(
+//                    checked = checked as Boolean,
+//                    onCheckedChange = {
+//                        if (checked.value) mvvmViewModel.deleteFromFavoritesList(movie.id)
+//                        else mvvmViewModel.appendInFavoritesList(movie.id)
+//
+//                        Log.d("asdf", "favorites: " + mvvmViewModel.getAllFavorites())
+//
+//                        checked.value = mvvmViewModel.checkExistFavoriteById(movie.id) },
+//                ) {
+//                    Icon(
+//                        imageVector = if (checked.value) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+//                        contentDescription = stringResource(R.string.image_description),
+//                        modifier = Modifier
+//                            .size(55.dp)
+//                            .padding(0.dp),
+//                        tint = MaterialTheme.colors.secondary
+//                    )
+//                }
+            }
         }
+
     }
 }
 

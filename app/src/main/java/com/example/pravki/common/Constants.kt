@@ -4,6 +4,7 @@ import com.example.pravki.retrofit.RetrofitClient
 import com.example.pravki.retrofit.RetrofitService
 
 object Constants {
+    const val ROOM_DB_NAME = "FavoritesMovie"
     const val BASE_URL = "https://api.themoviedb.org/3/"
     const val API_KEY = "f1c1fa32aa618e6adc168c3cc3cc6c46"
     const val LANGUAGE = "ru"
