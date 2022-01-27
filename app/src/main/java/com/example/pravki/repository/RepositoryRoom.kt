@@ -1,7 +1,6 @@
 package com.example.pravki.repository
 
 import androidx.lifecycle.LiveData
-import com.example.pravki.retrofit.ApiService
 import com.example.pravki.room.dao.FavoritesDao
 import com.example.pravki.room.entities.FavoritesEntity
 
@@ -9,7 +8,7 @@ class RepositoryRoom(private val favoritesDao: FavoritesDao) {
 
     val readAllData: LiveData<List<Int>> = favoritesDao.getAll()
 
-    fun readDataById(favoriteId: Int): Int {
+    suspend fun getFavoriteById(favoriteId: Int): Int {
         return favoritesDao.getFavoriteById(favoriteId) ?: -5
     }
     suspend fun addInFavorites(favoriteId: Int) {

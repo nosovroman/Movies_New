@@ -13,7 +13,7 @@ interface FavoritesDao {
     fun getAll(): LiveData<List<Int>>
 
     @Query("SELECT * FROM FavoritesEntity WHERE favoriteId = :favoriteId LIMIT 1")
-    fun getFavoriteById(favoriteId: Int): Int?
+    suspend fun getFavoriteById(favoriteId: Int): Int?
 
     @Insert
     suspend fun addInFavorites(favoritesEntity: FavoritesEntity)

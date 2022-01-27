@@ -94,5 +94,5 @@ dependencies {
     // optional - Paging 3 Integration
     implementation("androidx.room:room-paging:$room_version")
 
-    //implementation "androidx.compose.runtime:runtime-livedata:1.0.5"
+    implementation "androidx.compose.runtime:runtime-livedata:1.0.5"
 }
