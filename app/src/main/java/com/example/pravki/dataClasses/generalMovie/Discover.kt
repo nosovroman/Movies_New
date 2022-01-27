@@ -1,4 +1,4 @@
-package com.example.pravki.dataClasses
+package com.example.pravki.dataClasses.generalMovie
 
 data class Discover(
     val page: Int,

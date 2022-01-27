@@ -35,7 +35,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
-import com.example.pravki.dataClasses.Result
+import com.example.pravki.dataClasses.generalMovie.Result
 import com.example.pravki.common.Constants
 import com.example.pravki.extensions.formatDate
 import com.example.pravki.repository.Repository

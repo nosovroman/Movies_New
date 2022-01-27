@@ -2,7 +2,7 @@ package com.example.pravki.retrofit
 
 
 import com.example.pravki.common.Constants
-import com.example.pravki.dataClasses.Discover
+import com.example.pravki.dataClasses.generalMovie.Discover
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query

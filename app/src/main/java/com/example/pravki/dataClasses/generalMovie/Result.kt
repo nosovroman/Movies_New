@@ -1,4 +1,4 @@
-package com.example.pravki.dataClasses
+package com.example.pravki.dataClasses.generalMovie
 
 data class Result(
     val adult: Boolean,
