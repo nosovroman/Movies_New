@@ -1,4 +1,4 @@
-package com.example.pravki
+package com.example.pravki.z_naLuchieVremena
 
 enum class Status {
     SUCCESS,

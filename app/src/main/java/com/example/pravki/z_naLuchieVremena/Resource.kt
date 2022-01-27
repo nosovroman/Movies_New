@@ -1,4 +1,4 @@
-package com.example.pravki
+package com.example.pravki.z_naLuchieVremena
 
 data class Resource<out T>(val status: Status, val data: T?, val message: String?) {
     companion object {
