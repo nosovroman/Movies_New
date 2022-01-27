@@ -44,12 +44,11 @@ import com.example.pravki.retrofit.RetrofitBuilder
 import com.example.pravki.room.database.DatabaseFavorites
 import com.example.pravki.ui.theme.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class ViewModelRoom(application: Application) : AndroidViewModel(application) {
-    lateinit var readAllData: LiveData<List<Int>>
-    private lateinit var repositoryRoom: RepositoryRoom
+    var readAllData: LiveData<List<Int>>
+    private var repositoryRoom: RepositoryRoom
 
     init {
         val x = DatabaseFavorites.getInstance(application).favoritesDao()
@@ -57,40 +56,23 @@ class ViewModelRoom(application: Application) : AndroidViewModel(application) {
         readAllData = repositoryRoom.readAllData
     }
 
-    //    var favoritesList by mutableStateOf(mutableListOf<Int>())
-//        private set
-
-    //    fun loadAllFavorites() {
-//        favoritesList = favoritesDao.getAll() as MutableList<Int>
-//    }
-//
     fun appendInFavoritesList(favoriteId: Int) {
         viewModelScope.launch (Dispatchers.IO) {
             repositoryRoom.addInFavorites(favoriteId)
         }
-        Log.d("twer", "adding $favoriteId")
+        Log.d("log", "adding $favoriteId")
     }
 
     fun deleteFromFavoritesList(favoriteId: Int) {
         viewModelScope.launch (Dispatchers.IO) {
             repositoryRoom.deleteFromFavorites(favoriteId)
         }
-        Log.d("twer", "deleting $favoriteId")
+        Log.d("log", "deleting $favoriteId")
     }
 
     fun checkExistFavoriteById(favoriteId: Int): Boolean {
-        val x = readAllData.value?.contains(favoriteId) ?: false
-        Log.d("twer", x.toString())
-        return x
-//        viewModelScope.launch (Dispatchers.IO) {
-//            return repositoryRoom.getFavoriteById(favoriteId) >= 0
-//        }
+        return readAllData.value?.contains(favoriteId) ?: false
     }
-//
-//    fun getAllFavorites(): String {
-//        return favoritesDao.getAll().toString()
-//    }
-
 }
 
 class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
@@ -104,7 +86,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
         private set
 
 
-    fun setMovieList(newMovies: MutableList<Result>) {
+    private fun setMovieList(newMovies: MutableList<Result>) {
         movies = newMovies
     }
     fun setSearchLine(newTextSearchLine: String) {
@@ -113,7 +95,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
     fun setLetShowED(newErrorDialogState: String) {
         letShowErrorDialog = newErrorDialogState
     }
-    fun setResOfLoad(newResultOfLoad: Int) {
+    private fun setResOfLoad(newResultOfLoad: Int) {
         resultOfLoad = newResultOfLoad
     }
 
@@ -122,17 +104,14 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
     }
 
     fun getMovies() {
-        val repo = mainRepository // !!!!!!!!!!!!!!!!!!!!!!! передать сюда параметр mvvm
-        GlobalScope.launch(Dispatchers.IO) {
-            //Log.d("twer", "LOAD_STATE_NOTHING___$resultOfLoad")
+        val repo = mainRepository
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val response = if (searchLineState.isEmpty()) repo.getDiscover() else repo.getSearchDiscover(searchLineState)
                 if (response.isSuccessful) {
-                    //Log.d("twer", "BODY!!!")
                     setMovieList(response.body()!!.results as MutableList<Result>)
                     setResOfLoad(Constants.LOAD_STATE_DONE)
                     setLetShowED("")
-                    //Log.d("twer", "LOAD_STATE_SOMETHING___$resultOfLoad")
                 } else {
                     setLetShowED(R.string.error.toString() + " " + response.code())
                 }
@@ -151,7 +130,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val viewModelRoom = ViewModelProvider(this).get(ViewModelRoom::class.java)
-        val x = DatabaseFavorites.getInstance(this)
+        //val x = DatabaseFavorites.getInstance(this)
 
         setContent {
             PravkiTheme {
@@ -188,7 +167,7 @@ fun AppNavigator(mvvmViewModel: MvvmViewModel, viewModelRoom: ViewModelRoom) {
 fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel, viewModelRoom: ViewModelRoom) {
 
     val favorites = viewModelRoom.readAllData.observeAsState(listOf()).value
-    Log.d("twer", favorites.toString())
+    Log.d("log", favorites.toString())
 
     // получение списка фильмов
     mvvmViewModel.getMovies()
@@ -204,14 +183,6 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel, v
         }
         ShowErrorDialog(mvvmViewModel)
         MovieListComponent(navController, mvvmViewModel, viewModelRoom)
-//        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
-//            MovieListComponent(mvvmViewModel = mvvmViewModel, navController = navController)
-//        } else {
-//            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-//                LinearProgressIndicator(color = MaterialTheme.colors.secondary, backgroundColor = Color.White)
-//                //CircularProgressIndicator(color = MaterialTheme.colors.secondary)
-//            }
-//        }
     }
 }
 
@@ -284,11 +255,9 @@ fun SnackBar(mvvmViewModel: MvvmViewModel) {
                     ),
                 onClick = {
                     mvvmViewModel.setLetShowED("")
-                    //Log.d("twer", "updateButton")
                     mvvmViewModel.drawProgressBar()
                     mvvmViewModel.getMovies()
                 },
-                //colors = ButtonDefaults.buttonColors(backgroundColor = Invisible)
             ) {
                 Text(
                     text = stringResource(R.string.update),
@@ -304,7 +273,6 @@ fun SnackBar(mvvmViewModel: MvvmViewModel) {
 fun MovieListComponent(navController: NavHostController, mvvmViewModel: MvvmViewModel, viewModelRoom: ViewModelRoom) {
 
     if (mvvmViewModel.movies.isEmpty() && mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
-        //Log.d("twer", "empty_results")
         Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
@@ -316,12 +284,10 @@ fun MovieListComponent(navController: NavHostController, mvvmViewModel: MvvmView
     }
 
     if (mvvmViewModel.movies.isNotEmpty()) {
-        //Log.d("twer", "movie list")
         LazyColumn {
             itemsIndexed(mvvmViewModel.movies) { index, movie ->
-                // compute existing favorites
-                val x = viewModelRoom.checkExistFavoriteById(movie.id)
-                MovieCardComponent(navController, mvvmViewModel, viewModelRoom, movie, x)
+                val isFavorite = viewModelRoom.checkExistFavoriteById(movie.id)
+                MovieCardComponent(navController, viewModelRoom, movie, isFavorite)
                 if (index < mvvmViewModel.movies.size - 1) {
                     Spacer(modifier = Modifier.padding(top = 8.dp))
                     Divider(color = DividerColor, thickness = 1.dp)
@@ -333,7 +299,7 @@ fun MovieListComponent(navController: NavHostController, mvvmViewModel: MvvmView
 
 // конкретный фильм
 @Composable
-fun MovieCardComponent(navController: NavHostController, mvvmViewModel: MvvmViewModel, viewModelRoom: ViewModelRoom, movie: Result, exist2: Boolean) {
+fun MovieCardComponent(navController: NavHostController, viewModelRoom: ViewModelRoom, movie: Result, movieIsFavorite: Boolean) {
     // установка формата даты
     val date = movie.release_date.formatDate()
 
@@ -405,20 +371,16 @@ fun MovieCardComponent(navController: NavHostController, mvvmViewModel: MvvmView
                     style = MaterialTheme.typography.body2,
                 )
 
-                //val checked = remember { mutableStateOf(viewModelRoom.checkExistFavoriteById(movie.id)) }
-                var exist = exist2
+                var isFavorite = movieIsFavorite
                 IconToggleButton(
-                    checked = exist,//checked.value,
+                    checked = isFavorite,
                     onCheckedChange = {
-                        if (exist) viewModelRoom.deleteFromFavoritesList(movie.id)
+                        if (isFavorite) viewModelRoom.deleteFromFavoritesList(movie.id)
                         else viewModelRoom.appendInFavoritesList(movie.id)
-
-                        Log.d("twer", "favorites: " + viewModelRoom.readAllData.toString())
-
-                        exist = !exist },//viewModelRoom.checkExistFavoriteById(movie.id) },
+                        isFavorite = !isFavorite },
                 ) {
                     Icon(
-                        imageVector = if (exist) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = stringResource(R.string.image_description),
                         modifier = Modifier
                             .size(55.dp)
@@ -439,38 +401,5 @@ private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
     if (mvvmViewModel.letShowErrorDialog.isNotEmpty()) {
         Spacer(modifier = Modifier.height(10.dp))
         SnackBar(mvvmViewModel)
-//        val scaffoldState = rememberScaffoldState()
-//        val snackbarCoroutineScope = rememberCoroutineScope()
-//
-//        Scaffold(scaffoldState = scaffoldState) {
-//            snackbarCoroutineScope.launch {
-//                val result = scaffoldState.snackbarHostState.showSnackbar("Smth error", "Update", SnackbarDuration.Indefinite)
-//                when (result) {
-//                    SnackbarResult.ActionPerformed -> {
-//                        mvvmViewModel.setLetShowED("")
-//                        //Log.d("twer", "updateButton")
-//                        mvvmViewModel.drawProgressBar()
-//                        mvvmViewModel.getMovies()
-//                    }
-//                }
-//            }
-//        }
-
-//        AlertDialog(
-//            title = { Text(text = stringResource(R.string.error)) },
-//            text = { Text(mvvmViewModel.letShowErrorDialog) },
-//            confirmButton = {
-//                Button(onClick = {
-//                    mvvmViewModel.setLetShowED("")
-//                    //Log.d("twer", "updateButton")
-//                    mvvmViewModel.drawProgressBar()
-//                    mvvmViewModel.getMovies()
-//                }) {
-//                    Text(stringResource(R.string.update))
-//                }
-//            },
-//            onDismissRequest = {
-//            }
-//        )
     }
 }

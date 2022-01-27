@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Pravki</string>
-    <string name="error">Ошибка!</string>
+    <string name="error">Ошибка сервера!</string>
     <string name="update">Обновить</string>
     <string name="enter_movie_name">Введите название фильма</string>
     <string name="empty_results">По Вашему запросу \"%1$s\" ничего не найдено ☹</string>
@@ -8,5 +8,5 @@
     <string name="release_date">Дата релиза: </string>
     <string name="rating">Рейтинг:</string>
     <string name="star">⭐</string>
-    <string name="unknown_error">Unknown error</string>
+    <string name="unknown_error">Неизвестная ошибка</string>
 </resources>

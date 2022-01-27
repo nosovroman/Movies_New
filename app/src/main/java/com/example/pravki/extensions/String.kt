@@ -8,7 +8,7 @@ import kotlin.String
 class String {
 }
 
-fun String.formatDate(): String {
+fun String?.formatDate(): String {
     return if (this != null && this != "") {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val x = LocalDate.parse(this)
