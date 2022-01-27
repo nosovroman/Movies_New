@@ -35,7 +35,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
-import com.example.pravki.dataClasses.generalMovie.Result
+import com.example.pravki.dataClasses.generalMovie.GeneralMovieInfo
 import com.example.pravki.common.Constants
 import com.example.pravki.extensions.formatDate
 import com.example.pravki.repository.Repository
@@ -76,7 +76,7 @@ class ViewModelRoom(application: Application) : AndroidViewModel(application) {
 }
 
 class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
-    var movies by mutableStateOf(mutableListOf<Result>())
+    var movies by mutableStateOf(mutableListOf<GeneralMovieInfo>())
         private set
     var searchLineState by mutableStateOf("")
         private set
@@ -86,7 +86,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
         private set
 
 
-    private fun setMovieList(newMovies: MutableList<Result>) {
+    private fun setMovieList(newMovies: MutableList<GeneralMovieInfo>) {
         movies = newMovies
     }
     fun setSearchLine(newTextSearchLine: String) {
@@ -109,7 +109,7 @@ class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
             try {
                 val response = if (searchLineState.isEmpty()) repo.getDiscover() else repo.getSearchDiscover(searchLineState)
                 if (response.isSuccessful) {
-                    setMovieList(response.body()!!.results as MutableList<Result>)
+                    setMovieList(response.body()!!.results as MutableList<GeneralMovieInfo>)
                     setResOfLoad(Constants.LOAD_STATE_DONE)
                     setLetShowED("")
                 } else {
@@ -299,9 +299,9 @@ fun MovieListComponent(navController: NavHostController, mvvmViewModel: MvvmView
 
 // конкретный фильм
 @Composable
-fun MovieCardComponent(navController: NavHostController, viewModelRoom: ViewModelRoom, movie: Result, movieIsFavorite: Boolean) {
+fun MovieCardComponent(navController: NavHostController, viewModelRoom: ViewModelRoom, movie: GeneralMovieInfo, movieIsFavorite: Boolean) {
     // установка формата даты
-    val date = movie.release_date.formatDate()
+    val date = movie.releaseDate.formatDate()
 
     // карточка фильма
     Row (modifier = Modifier
@@ -320,7 +320,7 @@ fun MovieCardComponent(navController: NavHostController, viewModelRoom: ViewMode
         ) {
             Image(
                 //MANIFEST android:usesCleartextTraffic="true"
-                if (movie.poster_path != null) { rememberImagePainter("${Constants.BASE_URL_IMAGES}${Constants.POSTER_SIZE_LIST}${movie.poster_path}") }
+                if (movie.posterPath != null) { rememberImagePainter("${Constants.BASE_URL_IMAGES}${Constants.POSTER_SIZE_LIST}${movie.posterPath}") }
                 else { painterResource(R.drawable.default_image) },
                 contentDescription = stringResource(R.string.image_description),
                 contentScale = ContentScale.FillBounds,
@@ -366,7 +366,7 @@ fun MovieCardComponent(navController: NavHostController, viewModelRoom: ViewMode
 
                 // рейтинг
                 Text(
-                    text = stringResource(R.string.rating) + " " + movie.vote_average + " " + stringResource(R.string.star),
+                    text = stringResource(R.string.rating) + " " + movie.voteAverage + " " + stringResource(R.string.star),
                     color = MaterialTheme.colors.onSecondary,
                     style = MaterialTheme.typography.body2,
                 )
