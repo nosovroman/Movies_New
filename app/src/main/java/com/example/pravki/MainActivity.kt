@@ -42,7 +42,9 @@ import com.example.pravki.repository.Repository
 import com.example.pravki.repository.RepositoryRoom
 import com.example.pravki.retrofit.RetrofitBuilder
 import com.example.pravki.room.database.DatabaseFavorites
+import com.example.pravki.sealedClasses.NetworkResult
 import com.example.pravki.ui.theme.*
+import com.example.pravki.z_naLuchieVremena.StateOfLoad
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -76,50 +78,63 @@ class ViewModelRoom(application: Application) : AndroidViewModel(application) {
 }
 
 class MvvmViewModel(private val mainRepository: Repository) : ViewModel() {
-    var movies by mutableStateOf(mutableListOf<GeneralMovieInfo>())
-        private set
+//    var movies by mutableStateOf(mutableListOf<GeneralMovieInfo>())
+//        private set
     var searchLineState by mutableStateOf("")
         private set
-    var letShowErrorDialog by mutableStateOf("")
-        private set
-    var resultOfLoad by mutableStateOf(Constants.LOAD_STATE_LOADING)
-        private set
+//    var letShowErrorDialog by mutableStateOf("")
+//        private set
+//    var resultOfLoad by mutableStateOf(Constants.LOAD_STATE_LOADING)
+//        private set
 
 
-    private fun setMovieList(newMovies: MutableList<GeneralMovieInfo>) {
-        movies = newMovies
-    }
+//    private fun setMovieList(newMovies: MutableList<GeneralMovieInfo>) {
+//        movies = newMovies
+//    }
     fun setSearchLine(newTextSearchLine: String) {
         searchLineState = newTextSearchLine
     }
-    fun setLetShowED(newErrorDialogState: String) {
-        letShowErrorDialog = newErrorDialogState
-    }
-    private fun setResOfLoad(newResultOfLoad: Int) {
-        resultOfLoad = newResultOfLoad
-    }
+//    fun setLetShowED(newErrorDialogState: String) {
+//        letShowErrorDialog = newErrorDialogState
+//    }
+//    private fun setResOfLoad(newResultOfLoad: Int) {
+//        resultOfLoad = newResultOfLoad
+//    }
 
-    fun drawProgressBar() {
-        setResOfLoad(Constants.LOAD_STATE_LOADING)
+//    fun drawProgressBar() {
+//        setResOfLoad(Constants.LOAD_STATE_LOADING)
+//    }
+
+    var resp: MutableLiveData<NetworkResult<MutableList<GeneralMovieInfo>>> = MutableLiveData()
+
+    init {
+        getMovies()
     }
 
     fun getMovies() {
+        Log.d("twer", "getMovies")
+        val oldData = resp.value?.data ?: mutableListOf()
         val repo = mainRepository
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                resp.postValue(NetworkResult.Loading(oldData))
                 val response = if (searchLineState.isEmpty()) repo.getDiscover() else repo.getSearchDiscover(searchLineState)
                 if (response.isSuccessful) {
-                    setMovieList(response.body()!!.results as MutableList<GeneralMovieInfo>)
-                    setResOfLoad(Constants.LOAD_STATE_DONE)
-                    setLetShowED("")
+                    resp.postValue(NetworkResult.Success(response.body()!!.results as MutableList<GeneralMovieInfo>))
                 } else {
-                    setLetShowED(R.string.error.toString() + " " + response.code())
+                    resp.postValue(NetworkResult.Error(response.message(), oldData)) //R.string.error.toString() + " " + response.code()
                 }
             } catch (e: Exception) {
-                setLetShowED(e.message ?: R.string.unknown_error.toString())
+                resp.postValue(NetworkResult.Error(e.message, oldData))
             }
         }
     }
+
+//    sealed class NetworkResult<T>(val data: T? = null, val message: String? = null) {
+//        class Success<T>(data: T) : NetworkResult<T>(data)
+//        class Error<T>(message: String?, data: T? = null) : NetworkResult<T>(data, message)
+//        class Loading<T>(data: T) : NetworkResult<T>(data)
+//    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -130,7 +145,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val viewModelRoom = ViewModelProvider(this).get(ViewModelRoom::class.java)
-        //val x = DatabaseFavorites.getInstance(this)
 
         setContent {
             PravkiTheme {
@@ -163,6 +177,7 @@ fun AppNavigator(mvvmViewModel: MvvmViewModel, viewModelRoom: ViewModelRoom) {
     }
 }
 
+
 @Composable
 fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel, viewModelRoom: ViewModelRoom) {
 
@@ -170,20 +185,49 @@ fun MainScreen(navController: NavHostController, mvvmViewModel: MvvmViewModel, v
     Log.d("log", favorites.toString())
 
     // получение списка фильмов
-    mvvmViewModel.getMovies()
+    val x = mvvmViewModel.resp.observeAsState().value
+    //mvvmViewModel.getMovies()
 
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
         Spacer(modifier = Modifier.height(10.dp))
         SearchFieldComponent(mvvmViewModel)
         Spacer(modifier = Modifier.height(10.dp))
-        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_LOADING) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                LinearProgressIndicator(color = MaterialTheme.colors.secondary, backgroundColor = Color.White)
+        when (x) {
+            is NetworkResult.Loading<*> -> {
+                Log.d("twer", "x.data.toString()3")
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    LinearProgressIndicator(color = MaterialTheme.colors.secondary, backgroundColor = Color.White)
+                }
+            }
+            is NetworkResult.Success<*> -> {
+                x.data?.let { Log.d("twer", x.data.toString()) } ?: Log.d("twer", "x.data.toString()")
+                if (mvvmViewModel.resp.value?.data.isNullOrEmpty()) {
+                    EmptyMoviesComponent(navController, mvvmViewModel)
+                }
+            }
+            is NetworkResult.Error<*> -> {
+                x.message?.let { Log.d("twer", x.message.toString()) } ?: Log.d("twer", "x.data.toString()2")
+                ShowErrorDialog(mvvmViewModel)
             }
         }
-        ShowErrorDialog(mvvmViewModel)
-        MovieListComponent(navController, mvvmViewModel, viewModelRoom)
+        if (!mvvmViewModel.resp.value?.data.isNullOrEmpty()) {
+            val movies = mvvmViewModel.resp.value?.data as MutableList<GeneralMovieInfo>
+            MovieListComponent(navController, movies, viewModelRoom)
+        }
     }
+
+//    Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
+//        Spacer(modifier = Modifier.height(10.dp))
+//        SearchFieldComponent(mvvmViewModel)
+//        Spacer(modifier = Modifier.height(10.dp))
+//        if (mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_LOADING) {
+//            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+//                LinearProgressIndicator(color = MaterialTheme.colors.secondary, backgroundColor = Color.White)
+//            }
+//        }
+//        ShowErrorDialog(mvvmViewModel)
+//        MovieListComponent(navController, mvvmViewModel, viewModelRoom)
+//    }
 }
 
 // строка поиска
@@ -212,7 +256,7 @@ fun SearchFieldComponent(mvvmViewModel: MvvmViewModel) {
             value = mvvmViewModel.searchLineState,
             onValueChange = {
                 mvvmViewModel.setSearchLine(it)
-                mvvmViewModel.drawProgressBar()
+                //mvvmViewModel.drawProgressBar()
                 mvvmViewModel.getMovies()
             },
             singleLine = true,
@@ -254,8 +298,8 @@ fun SnackBar(mvvmViewModel: MvvmViewModel) {
                         shape = RoundedCornerShape(10.dp),
                     ),
                 onClick = {
-                    mvvmViewModel.setLetShowED("")
-                    mvvmViewModel.drawProgressBar()
+//                    mvvmViewModel.setLetShowED("")
+//                    mvvmViewModel.drawProgressBar()
                     mvvmViewModel.getMovies()
                 },
             ) {
@@ -268,33 +312,55 @@ fun SnackBar(mvvmViewModel: MvvmViewModel) {
     }
 }
 
+@Composable
+fun EmptyMoviesComponent(navController: NavHostController, mvvmViewModel: MvvmViewModel) {
+    Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
+            modifier = Modifier.padding(top = 10.dp),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.onPrimary,
+        )
+    }
+}
+
 // список фильмов
 @Composable
-fun MovieListComponent(navController: NavHostController, mvvmViewModel: MvvmViewModel, viewModelRoom: ViewModelRoom) {
+fun MovieListComponent(navController: NavHostController, movies: MutableList<GeneralMovieInfo>, viewModelRoom: ViewModelRoom) {
 
-    if (mvvmViewModel.movies.isEmpty() && mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
-        Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
-                modifier = Modifier.padding(top = 10.dp),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.onPrimary,
-            )
-        }
-    }
+//    if (mvvmViewModel.movies.isEmpty() && mvvmViewModel.resultOfLoad == Constants.LOAD_STATE_DONE) {
+//        Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+//            Text(
+//                text = stringResource(R.string.empty_results, mvvmViewModel.searchLineState),
+//                modifier = Modifier.padding(top = 10.dp),
+//                textAlign = TextAlign.Center,
+//                color = MaterialTheme.colors.onPrimary,
+//            )
+//        }
+//    }
 
-    if (mvvmViewModel.movies.isNotEmpty()) {
+//    if (mvvmViewModel.movies.isNotEmpty()) {
+//        LazyColumn {
+//            itemsIndexed(mvvmViewModel.movies) { index, movie ->
+//                val isFavorite = viewModelRoom.checkExistFavoriteById(movie.id)
+//                MovieCardComponent(navController, viewModelRoom, movie, isFavorite)
+//                if (index < mvvmViewModel.movies.size - 1) {
+//                    Spacer(modifier = Modifier.padding(top = 8.dp))
+//                    Divider(color = DividerColor, thickness = 1.dp)
+//                }
+//            }
+//        }
+//    }
         LazyColumn {
-            itemsIndexed(mvvmViewModel.movies) { index, movie ->
+            itemsIndexed(movies) { index, movie ->
                 val isFavorite = viewModelRoom.checkExistFavoriteById(movie.id)
                 MovieCardComponent(navController, viewModelRoom, movie, isFavorite)
-                if (index < mvvmViewModel.movies.size - 1) {
+                if (index < movies.size - 1) {
                     Spacer(modifier = Modifier.padding(top = 8.dp))
                     Divider(color = DividerColor, thickness = 1.dp)
                 }
             }
         }
-    }
 }
 
 // конкретный фильм
@@ -394,12 +460,8 @@ fun MovieCardComponent(navController: NavHostController, viewModelRoom: ViewMode
     }
 }
 
-// всплывающее окно ошибки
 @Composable
 private fun ShowErrorDialog(mvvmViewModel: MvvmViewModel) {
-
-    if (mvvmViewModel.letShowErrorDialog.isNotEmpty()) {
         Spacer(modifier = Modifier.height(10.dp))
         SnackBar(mvvmViewModel)
-    }
 }
